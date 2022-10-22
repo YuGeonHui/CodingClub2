@@ -54,14 +54,13 @@ struct ContentView: View {
     
     @State fileprivate var totalNumber: String = "0"
     @State var tempNumber: Int = 0
-    
-    @State var isEditing: Bool = false
+    @State var isFirstInput: Bool = true
     
     @State var operateType: ButtonType = .unit("C")
     
     private let buttonData: [[ButtonType]] = [
         [.unit("C"), .unit("+/-"), .unit("%"), .calculation("/")],
-        [.number("7"), .number("8"), .number("9"), .calculation("X")],
+        [.number("7"), .number("8"), .number("9"), .calculation("*")],
         [.number("4"), .number("5"), .number("6"), .calculation("-")],
         [.number("1"), .number("2"), .number("3"), .calculation("+")],
         [.number("0"), .number(","), .calculation("=")],
@@ -95,50 +94,7 @@ struct ContentView: View {
                             
                             Button {
                                 
-                                if item == .unit("C") { totalNumber = "0" }
-                                
-                                if !isEditing {
-                                    
-                                    totalNumber += item.buttonDisplayName
-                                    (totalNumber, isEditing) = onlyNumberIntput(type: item, inputValue: totalNumber)
-                                    
-//                                    if item == .unit("C") {
-//
-//                                        totalNumber = "0"
-//
-//                                    } else if item == .calculation("+") {
-//
-//                                        return
-//
-                                    
-//                                    } else {
-//                                        totalNumber += item.buttonDisplayName
-//                                        isEditing = true
-//                                    }
-                                    
-                                } else {
-                                    
-                                    if item == .calculation("+") {
-                                        
-                                        tempNumber = Int(totalNumber) ?? 0
-                                        operateType = .unit("+")
-                                        totalNumber = "0"
-                                        
-                                    } else if item == .calculation("=") {
-                                        
-                                        if operateType == .unit("+") {
-                                            totalNumber = String((Int(totalNumber) ?? 0) + tempNumber)
-                                        }
-                                        
-                                        print("operatyeType2: \(operateType)")
-                                        print("unit: \(item)")
-                                        
-                                    } else {
-                                        
-                                        totalNumber += item.buttonDisplayName
-                                    }
-                                    
-                                }
+                                self.calculate(type: item)
                                 
                             } label: {
                                 
@@ -173,18 +129,59 @@ private func calculateButtonHeight(_ type: ButtonType) -> CGFloat {
     return (UIScreen.main.bounds.width - 5 * 10) / 4
 }
 
-private func onlyNumberIntput(type: ButtonType, inputValue: String) -> (String ,Bool) {
+extension ContentView {
     
-    switch type {
+    private func calculate(type: ButtonType) {
         
-    case .number: return (inputValue, true)
-    case .calculation: return ("0", false)
-    case .unit: return ("0", false)
-    }
-}
-
-private func calculate(item: ButtonType, tempNumber: Int, totalNumber: Int) {
+        if isFirstInput {
+            
+            switch type {
+                
+            case .unit("C"): return totalNumber = "0"
+            case .number:
+                totalNumber += type.buttonDisplayName
+                self.isFirstInput = false
+                return
+            case .calculation: return self.isFirstInput = false
+            case .unit: return self.isFirstInput = false
+            }
+        }
+        
+        else {
+                     
+            switch type {
+            case .unit("C"): return totalNumber = "0"
+            case .number:
+                totalNumber = ""
+                totalNumber += type.buttonDisplayName
+                return
+                
+            case .calculation("+"), .calculation("-"), .calculation("*"), .calculation("/"): do {
+                
+                tempNumber = Int(totalNumber) ?? 0
+                self.operateType = type
+            }
+                
+            case .calculation("="): do {
     
+                switch self.operateType {
+                case .calculation("+"): return totalNumber = String((Int(totalNumber) ?? 0) + tempNumber)
+                    
+                case .calculation("-"): return totalNumber = String(tempNumber - (Int(totalNumber) ?? 0))
+                    
+                case .calculation("*"): return totalNumber = String((Int(totalNumber) ?? 0) * tempNumber)
+                    
+                case .calculation("/"): return totalNumber = String((Int(totalNumber) ?? 0) / tempNumber)
+                default: return
+                }
+            }
+                
+            default: return
+            }
+            
+            
+        }
+    }
 }
 
 struct ContentView_Previews: PreviewProvider {
